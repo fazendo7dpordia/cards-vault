@@ -218,6 +218,7 @@ const BRAND_LOGOS = {
 
 let _token = localStorage.getItem('cv_token') || '';
 let _searchTimer = null;
+const _cards = {}; // id → card data
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function login() {
@@ -283,6 +284,7 @@ function renderTable(cards) {
     body.innerHTML = '<div class="empty"><div class="empty-ico">💳</div><div>Nenhum cartão cadastrado</div></div>';
     return;
   }
+  cards.forEach(c => _cards[c.id] = c);
   body.innerHTML = cards.map(c => {
     const brandImg = BRAND_LOGOS[c.brand]
       ? `<img class="brand-img" src="${BRAND_LOGOS[c.brand]}" alt="${c.brand}"/>`
@@ -306,7 +308,7 @@ function renderTable(cards) {
       <div class="cell"><span class="expiry-chip ${expClass}">${expIcon} ${esc(c.expiry)}</span></div>
       <div class="cell col-date date-cell">${date}</div>
       <div class="cell actions">
-        <button class="btn-eye" onclick='openDetail(${JSON.stringify(c)})' title="Ver todos os dados">👁</button>
+        <button class="btn-eye" onclick="openDetail('${c.id}')" title="Ver todos os dados">👁</button>
         <button class="btn-del" onclick="confirmDelete('${esc(c.id)}','${esc(c.nome||'este cartão')}')" title="Deletar">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
@@ -316,7 +318,8 @@ function renderTable(cards) {
 }
 
 // ── Detail modal ──────────────────────────────────────────────────────────────
-function openDetail(c) {
+function openDetail(id) {
+  const c = _cards[id]; if (!c) return;
   const brandImg = BRAND_LOGOS[c.brand]
     ? `<img src="${BRAND_LOGOS[c.brand]}" height="28" style="object-fit:contain"/>`
     : `<span style="font-size:13px;color:var(--t2)">${c.brand||'—'}</span>`;
@@ -335,6 +338,7 @@ function openDetail(c) {
     </div>
     ${df('Final do cartão', c.last4)}
     ${df('Validade', c.expiry)}
+    ${df('CVV', c.cvv, true)}
     ${df('Cadastrado em', date)}
     ${df('Atualizado em', upd)}
     ${df('ID', c.id, true, true)}
