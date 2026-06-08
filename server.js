@@ -112,7 +112,7 @@ app.post('/api/cards', async (req, res) => {
     res.json({ ok: true, action: 'created', id });
   } catch (e) {
     console.error('[POST /api/cards]', e.message);
-    res.status(500).json({ ok: false, message: 'Erro interno.' });
+    res.status(500).json({ ok: false, message: 'Erro interno.', debug: e.message });
   }
 });
 
