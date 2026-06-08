@@ -108,88 +108,86 @@
   /* ── TABLE ── */
   .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
   .table-head{
-    display:grid;grid-template-columns:1fr 1fr 80px 80px 90px 130px 52px;
+    display:grid;grid-template-columns:1.4fr 1fr 90px 80px 90px 120px 36px 36px;
     padding:10px 18px;border-bottom:1px solid var(--border);
     font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;
   }
   .table-body{max-height:calc(100vh - 340px);overflow-y:auto}
   .table-row{
-    display:grid;grid-template-columns:1fr 1fr 80px 80px 90px 130px 52px;
+    display:grid;grid-template-columns:1.4fr 1fr 90px 80px 90px 120px 36px 36px;
     padding:13px 18px;border-bottom:1px solid var(--border);align-items:center;
-    transition:background .1s;
+    cursor:pointer;transition:background .1s;
   }
   .table-row:last-child{border-bottom:none}
   .table-row:hover{background:rgba(255,255,255,.03)}
   .cell{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cell-sub{font-size:11px;color:var(--t2);margin-top:1px}
 
+  /* expanded row */
+  .row-detail{
+    display:none;border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,.02);padding:16px 20px;
+  }
+  .row-detail.open{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .detail-field{display:flex;flex-direction:column;gap:3px}
+  .detail-label{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px}
+  .detail-value{font-size:13px;color:var(--text);font-family:monospace;word-break:break-all}
+  .copy-btn{
+    display:inline-flex;align-items:center;gap:4px;margin-top:4px;
+    background:none;border:1px solid var(--border);border-radius:5px;
+    color:var(--t2);font-size:10px;padding:2px 8px;cursor:pointer;font-family:inherit;
+    transition:all .15s;
+  }
+  .copy-btn:hover{border-color:var(--red);color:var(--red)}
+  .copy-btn.copied{border-color:var(--green);color:var(--green)}
+
   /* brand badge */
   .brand-wrap{display:flex;align-items:center;gap:8px}
   .brand-img{height:22px;object-fit:contain;border-radius:3px}
-  .brand-unknown{
-    font-size:10px;font-weight:700;background:#2a2a35;color:var(--t2);
-    border-radius:4px;padding:2px 6px;
-  }
+  .brand-unknown{font-size:10px;font-weight:700;background:#2a2a35;color:var(--t2);border-radius:4px;padding:2px 6px}
 
   /* last4 */
-  .last4{
-    font-family:monospace;font-size:13px;font-weight:700;color:var(--text);
-    letter-spacing:1px;
-  }
+  .last4{font-family:monospace;font-size:13px;font-weight:700;color:var(--text);letter-spacing:1px}
   .last4::before{content:'•••• ';color:var(--t3)}
 
   /* expiry */
-  .expiry-chip{
-    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
-    padding:3px 9px;border-radius:6px;
-  }
+  .expiry-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px}
   .expiry-ok{background:rgba(34,197,94,.1);color:var(--green)}
   .expiry-warn{background:rgba(251,191,36,.1);color:#fbbf24}
 
   /* date */
   .date-cell{font-size:12px;color:var(--t2)}
 
-  /* delete btn */
-  .btn-del{
-    width:34px;height:34px;background:none;border:1.5px solid var(--border);border-radius:8px;
-    color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:all .15s;flex-shrink:0;
+  /* action btns */
+  .btn-del,.btn-expand{
+    width:30px;height:30px;background:none;border:1.5px solid var(--border);border-radius:7px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;
   }
+  .btn-del{color:var(--t3)}
   .btn-del:hover{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+  .btn-expand{color:var(--t3);font-size:14px}
+  .btn-expand:hover{border-color:var(--t2);color:var(--text)}
+  .btn-expand.open{border-color:var(--red);color:var(--red);transform:rotate(180deg)}
 
-  /* empty */
+  /* empty / loader */
   .empty{padding:60px 20px;text-align:center;color:var(--t3)}
   .empty-ico{font-size:40px;margin-bottom:12px}
   .empty-txt{font-size:14px}
-
-  /* loader */
   .loading{padding:40px;text-align:center;color:var(--t3);font-size:13px}
 
   /* confirm modal */
-  #confirmModal{
-    display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
-    align-items:center;justify-content:center;backdrop-filter:blur(4px);
-  }
+  #confirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
   #confirmModal.show{display:flex}
-  .confirm-box{
-    background:var(--surface);border:1px solid var(--border);border-radius:18px;
-    padding:28px 24px;width:100%;max-width:340px;text-align:center;
-  }
+  .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px;width:100%;max-width:340px;text-align:center}
   .confirm-ico{font-size:36px;margin-bottom:12px}
   .confirm-title{font-size:17px;font-weight:800;margin-bottom:8px}
   .confirm-sub{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:22px}
   .confirm-btns{display:flex;gap:10px}
-  .confirm-btn-cancel{
-    flex:1;height:44px;background:none;border:1.5px solid var(--border);border-radius:10px;
-    color:var(--t2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
-  }
-  .confirm-btn-ok{
-    flex:1;height:44px;background:var(--red);border:none;border-radius:10px;
-    color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
-  }
+  .confirm-btn-cancel{flex:1;height:44px;background:none;border:1.5px solid var(--border);border-radius:10px;color:var(--t2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+  .confirm-btn-ok{flex:1;height:44px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 
   @media(max-width:700px){
-    .table-head,.table-row{grid-template-columns:1fr 80px 80px 52px}
+    .table-head,.table-row{grid-template-columns:1fr 80px 80px 36px 36px}
     .col-cpf,.col-email,.col-date{display:none}
     .content{padding:16px}
     .stats-row{grid-template-columns:1fr 1fr}
@@ -269,6 +267,7 @@
         <div>Final</div>
         <div>Validade</div>
         <div class="col-date">Cadastrado em</div>
+        <div></div>
         <div></div>
       </div>
       <div class="table-body" id="tableBody">
@@ -404,34 +403,70 @@ function renderTable(cards) {
     if (expParts.length === 2) {
       const m = parseInt(expParts[0]), y = parseInt('20'+expParts[1]);
       const now = new Date(), cm = now.getMonth()+1, cy = now.getFullYear();
-      const monthsLeft = (y - cy) * 12 + (m - cm);
-      if (monthsLeft <= 3) { expiryClass = 'expiry-warn'; expiryIcon = '⚠'; }
+      if ((y - cy) * 12 + (m - cm) <= 3) { expiryClass = 'expiry-warn'; expiryIcon = '⚠'; }
     }
 
     const date = c.created_at
       ? new Date(c.created_at).toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
       : '—';
 
+    const id = c.id;
+
     return `
-      <div class="table-row">
+      <div class="table-row" onclick="toggleDetail('${id}')">
         <div class="cell">
           <div>${esc(c.nome || '—')}</div>
           <div class="cell-sub">${esc(c.email || '—')}</div>
         </div>
         <div class="cell col-cpf">${esc(c.cpf || '—')}</div>
-        <div class="cell">
-          <div class="brand-wrap">${brandImg}</div>
-        </div>
+        <div class="cell"><div class="brand-wrap">${brandImg}</div></div>
         <div class="cell"><span class="last4">${esc(c.last4)}</span></div>
         <div class="cell"><span class="expiry-chip ${expiryClass}">${expiryIcon} ${esc(c.expiry)}</span></div>
         <div class="cell col-date date-cell">${date}</div>
-        <div class="cell">
-          <button class="btn-del" onclick="confirmDelete('${c.id}','${esc(c.nome||'este cartão')}')" title="Deletar">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        <div class="cell" onclick="event.stopPropagation()">
+          <button class="btn-del" onclick="confirmDelete('${id}','${esc(c.nome||'este cartão')}')" title="Deletar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
         </div>
+        <div class="cell">
+          <button class="btn-expand" id="exp-btn-${id}" title="Ver todos os dados">▾</button>
+        </div>
+      </div>
+      <div class="row-detail" id="detail-${id}">
+        ${detailField('Nome completo', c.nome)}
+        ${detailField('E-mail', c.email)}
+        ${detailField('Telefone', c.telefone)}
+        ${detailField('CPF', c.cpf, true)}
+        ${detailField('Bandeira', c.brand)}
+        ${detailField('Final do cartão', c.last4)}
+        ${detailField('Validade', c.expiry)}
+        ${detailField('ID interno', c.id)}
+        ${detailField('Cadastrado em', date)}
+        ${detailField('Atualizado em', c.updated_at ? new Date(c.updated_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}) : '—')}
       </div>`;
   }).join('');
+}
+
+function detailField(label, value, copyable) {
+  const v = value || '—';
+  const copyBtn = copyable ? `<button class="copy-btn" onclick="copyText('${esc(v)}', this)">📋 copiar</button>` : '';
+  return `<div class="detail-field"><div class="detail-label">${label}</div><div class="detail-value">${esc(v)}</div>${copyBtn}</div>`;
+}
+
+function toggleDetail(id) {
+  const detail = document.getElementById('detail-'+id);
+  const btn    = document.getElementById('exp-btn-'+id);
+  if (!detail) return;
+  const open = detail.classList.toggle('open');
+  if (btn) btn.classList.toggle('open', open);
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 copiar'; btn.classList.remove('copied'); }, 1800);
+  });
 }
 
 function esc(s) {

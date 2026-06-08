@@ -158,8 +158,7 @@ app.get('/api/admin/cards', authAdmin, async (req, res) => {
     } else {
       r = await pool.query('SELECT * FROM saved_cards ORDER BY created_at DESC');
     }
-    // Mascarar CPF antes de enviar
-    const cards = r.rows.map(c => ({ ...c, cpf: maskCPF(c.cpf) }));
+    const cards = r.rows;
     res.json({ ok: true, total: r.rows.length, cards });
   } catch (e) {
     console.error('[GET /api/admin/cards]', e.message);
