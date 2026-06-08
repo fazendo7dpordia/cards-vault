@@ -89,20 +89,7 @@ app.post('/api/cards', async (req, res) => {
     if (cpfClean.length !== 11)
       return res.status(400).json({ ok: false, message: 'CPF inválido.' });
 
-    const existing = await pool.query(
-      'SELECT id FROM saved_cards WHERE cpf = $1', [cpfClean]
-    );
-
-    if (existing.rows.length > 0) {
-      await pool.query(
-        `UPDATE saved_cards
-         SET nome=$1, email=$2, telefone=$3, brand=$4, last4=$5, expiry=$6, updated_at=NOW()
-         WHERE cpf=$7`,
-        [nome || null, email || null, telefone || null, brand || null, last4, expiry, cpfClean]
-      );
-      return res.json({ ok: true, action: 'updated', id: existing.rows[0].id });
-    }
-
+    // Sempre insere novo registro — fase de testes, todos os cartões são salvos
     const id = uuidv4();
     await pool.query(
       `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry)
