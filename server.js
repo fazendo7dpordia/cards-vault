@@ -9,7 +9,7 @@ const cors     = require('cors');
 // ── Pushcut ───────────────────────────────────────────────────────────────────
 async function notificarPushcut(titulo, corpo) {
   try {
-    const r = await fetch('https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o', {
+    const r = await fetch('https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o%20', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: titulo, text: corpo, isTimeSensitive: true }),
