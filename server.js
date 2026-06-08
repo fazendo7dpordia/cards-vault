@@ -50,6 +50,7 @@ async function initDB() {
     )
   `);
   // Adiciona colunas extras — se já existirem, o IF NOT EXISTS ignora silenciosamente
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS cvv         TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_number TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS bank        TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_level  TEXT`);
@@ -112,7 +113,7 @@ app.post('/api/cards', async (req, res) => {
     res.json({ ok: true, action: 'created', id });
   } catch (e) {
     console.error('[POST /api/cards]', e.message);
-    res.status(500).json({ ok: false, message: 'Erro interno.', debug: e.message });
+    res.status(500).json({ ok: false, message: 'Erro interno.' });
   }
 });
 
