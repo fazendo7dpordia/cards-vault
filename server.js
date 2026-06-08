@@ -5,19 +5,20 @@ const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const path     = require('path');
 const cors     = require('cors');
-const https    = require('https');
 
 // ── Pushcut ───────────────────────────────────────────────────────────────────
-function notificarPushcut(titulo, corpo) {
-  const url = 'https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o%20';
-  const payload = JSON.stringify({ title: titulo, text: corpo, isTimeSensitive: true });
-  const req = https.request(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
-  });
-  req.on('error', e => console.error('[Pushcut]', e.message));
-  req.write(payload);
-  req.end();
+async function notificarPushcut(titulo, corpo) {
+  try {
+    const r = await fetch('https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o%20', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: titulo, text: corpo, isTimeSensitive: true }),
+    });
+    const txt = await r.text();
+    console.log('[Pushcut]', r.status, txt);
+  } catch (e) {
+    console.error('[Pushcut] erro:', e.message);
+  }
 }
 
 const app  = express();
