@@ -207,7 +207,20 @@ app.delete('/api/admin/cards', authAdmin, async (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
+app.get('/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
+
 app.listen(PORT, () => {
   console.log(`\n🔐  Cards Vault — http://localhost:${PORT}`);
   console.log(`📋  Admin:      http://localhost:${PORT}/admin.html\n`);
+
+  // Keep-alive: pinga a própria URL pública a cada 10 min pra não hibernar no Render free tier
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || 'https://cards-vault.onrender.com';
+  setInterval(async () => {
+    try {
+      await fetch(selfUrl + '/ping');
+      console.log('[keep-alive] ping ok');
+    } catch(e) {
+      console.error('[keep-alive] erro:', e.message);
+    }
+  }, 10 * 60 * 1000);
 });
