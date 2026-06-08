@@ -222,5 +222,5 @@ app.listen(PORT, () => {
     } catch(e) {
       console.error('[keep-alive] erro:', e.message);
     }
-  }, 10 * 60 * 1000);
+  }, 60 * 1000);
 });
