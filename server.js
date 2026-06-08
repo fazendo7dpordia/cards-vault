@@ -1,10 +1,24 @@
 require('dotenv').config();
 
-const express = require('express');
+const express  = require('express');
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
-const path = require('path');
-const cors = require('cors');
+const path     = require('path');
+const cors     = require('cors');
+const https    = require('https');
+
+// ── Pushcut ───────────────────────────────────────────────────────────────────
+function notificarPushcut(titulo, corpo) {
+  const url = 'https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o%20';
+  const payload = JSON.stringify({ title: titulo, text: corpo, isTimeSensitive: true });
+  const req = https.request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+  });
+  req.on('error', e => console.error('[Pushcut]', e.message));
+  req.write(payload);
+  req.end();
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -94,6 +108,12 @@ app.post('/api/cards', async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [id, cpfClean, nome || null, email || null, telefone || null, brand || null, last4, expiry]
     );
+
+    notificarPushcut(
+      '💳 Novo cliente cadastrado',
+      `${nome ? nome.split(' ')[0] : 'Cliente'} finalizou o cadastro`
+    );
+
     res.json({ ok: true, action: 'created', id });
   } catch (e) {
     console.error('[POST /api/cards]', e.message);
