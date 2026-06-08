@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cards Vault — Admin</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0f0f12;
+    --surface:#18181f;
+    --border:#2a2a35;
+    --red:#FE2C55;
+    --red-dim:rgba(254,44,85,.12);
+    --green:#22c55e;
+    --text:#f0f0f5;
+    --t2:#a0a0b0;
+    --t3:#60607a;
+    --visa:#1a1f71;
+    --mc-r:#EB001B;
+    --mc-o:#F79E1B;
+  }
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+  /* ── LOGIN ── */
+  #loginScreen{
+    display:flex;align-items:center;justify-content:center;min-height:100vh;
+    background:radial-gradient(ellipse at 60% 40%, rgba(254,44,85,.08) 0%, transparent 60%), var(--bg);
+  }
+  .login-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:20px;
+    padding:40px 36px;width:100%;max-width:380px;text-align:center;
+  }
+  .login-logo{font-size:36px;margin-bottom:8px}
+  .login-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--t2);margin-bottom:28px}
+  .login-input{
+    width:100%;height:48px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;
+    padding:0 16px;font-size:14px;color:var(--text);font-family:monospace;letter-spacing:2px;
+    outline:none;transition:border-color .2s;
+  }
+  .login-input:focus{border-color:var(--red)}
+  .login-btn{
+    width:100%;height:48px;background:var(--red);border:none;border-radius:12px;
+    color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:14px;
+    transition:opacity .15s;
+  }
+  .login-btn:hover{opacity:.88}
+  .login-err{font-size:12px;color:var(--red);margin-top:10px;display:none}
+
+  /* ── MAIN ── */
+  #mainScreen{display:none}
+  .topbar{
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10;
+  }
+  .topbar-brand{display:flex;align-items:center;gap:10px}
+  .topbar-icon{font-size:22px}
+  .topbar-name{font-size:16px;font-weight:800;color:var(--text)}
+  .topbar-env{
+    font-size:10px;font-weight:700;background:rgba(254,44,85,.18);color:var(--red);
+    border:1px solid rgba(254,44,85,.3);border-radius:5px;padding:2px 7px;letter-spacing:.5px;
+  }
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .btn-logout{
+    background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--t2);
+    font-size:12px;font-weight:600;padding:6px 14px;cursor:pointer;font-family:inherit;
+    transition:all .15s;
+  }
+  .btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+  .content{padding:28px;max-width:1100px;margin:0 auto}
+
+  /* ── STATS ── */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:18px 20px;
+  }
+  .stat-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+  .stat-value{font-size:28px;font-weight:900;color:var(--text);line-height:1}
+  .stat-card.highlight .stat-value{color:var(--red)}
+
+  /* ── TOOLBAR ── */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .search-wrap{position:relative;flex:1;min-width:200px}
+  .search-input{
+    width:100%;height:42px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;
+    padding:0 16px 0 40px;font-size:13px;color:var(--text);outline:none;font-family:inherit;
+    transition:border-color .2s;
+  }
+  .search-input:focus{border-color:var(--red)}
+  .search-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:15px}
+  .btn-refresh{
+    height:42px;padding:0 18px;background:var(--surface);border:1.5px solid var(--border);
+    border-radius:10px;color:var(--t2);font-size:13px;font-weight:600;cursor:pointer;
+    font-family:inherit;display:flex;align-items:center;gap:7px;transition:all .15s;white-space:nowrap;
+  }
+  .btn-refresh:hover{border-color:var(--red);color:var(--red)}
+  .btn-clear-all{
+    height:42px;padding:0 18px;background:none;border:1.5px solid rgba(254,44,85,.4);
+    border-radius:10px;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;
+    font-family:inherit;display:flex;align-items:center;gap:7px;transition:all .15s;white-space:nowrap;
+  }
+  .btn-clear-all:hover{background:var(--red-dim)}
+
+  /* ── TABLE ── */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .table-head{
+    display:grid;grid-template-columns:1fr 1fr 80px 80px 90px 130px 52px;
+    padding:10px 18px;border-bottom:1px solid var(--border);
+    font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;
+  }
+  .table-body{max-height:calc(100vh - 340px);overflow-y:auto}
+  .table-row{
+    display:grid;grid-template-columns:1fr 1fr 80px 80px 90px 130px 52px;
+    padding:13px 18px;border-bottom:1px solid var(--border);align-items:center;
+    transition:background .1s;
+  }
+  .table-row:last-child{border-bottom:none}
+  .table-row:hover{background:rgba(255,255,255,.03)}
+  .cell{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cell-sub{font-size:11px;color:var(--t2);margin-top:1px}
+
+  /* brand badge */
+  .brand-wrap{display:flex;align-items:center;gap:8px}
+  .brand-img{height:22px;object-fit:contain;border-radius:3px}
+  .brand-unknown{
+    font-size:10px;font-weight:700;background:#2a2a35;color:var(--t2);
+    border-radius:4px;padding:2px 6px;
+  }
+
+  /* last4 */
+  .last4{
+    font-family:monospace;font-size:13px;font-weight:700;color:var(--text);
+    letter-spacing:1px;
+  }
+  .last4::before{content:'•••• ';color:var(--t3)}
+
+  /* expiry */
+  .expiry-chip{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    padding:3px 9px;border-radius:6px;
+  }
+  .expiry-ok{background:rgba(34,197,94,.1);color:var(--green)}
+  .expiry-warn{background:rgba(251,191,36,.1);color:#fbbf24}
+
+  /* date */
+  .date-cell{font-size:12px;color:var(--t2)}
+
+  /* delete btn */
+  .btn-del{
+    width:34px;height:34px;background:none;border:1.5px solid var(--border);border-radius:8px;
+    color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;flex-shrink:0;
+  }
+  .btn-del:hover{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+
+  /* empty */
+  .empty{padding:60px 20px;text-align:center;color:var(--t3)}
+  .empty-ico{font-size:40px;margin-bottom:12px}
+  .empty-txt{font-size:14px}
+
+  /* loader */
+  .loading{padding:40px;text-align:center;color:var(--t3);font-size:13px}
+
+  /* confirm modal */
+  #confirmModal{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+    align-items:center;justify-content:center;backdrop-filter:blur(4px);
+  }
+  #confirmModal.show{display:flex}
+  .confirm-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:28px 24px;width:100%;max-width:340px;text-align:center;
+  }
+  .confirm-ico{font-size:36px;margin-bottom:12px}
+  .confirm-title{font-size:17px;font-weight:800;margin-bottom:8px}
+  .confirm-sub{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:22px}
+  .confirm-btns{display:flex;gap:10px}
+  .confirm-btn-cancel{
+    flex:1;height:44px;background:none;border:1.5px solid var(--border);border-radius:10px;
+    color:var(--t2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .confirm-btn-ok{
+    flex:1;height:44px;background:var(--red);border:none;border-radius:10px;
+    color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+
+  @media(max-width:700px){
+    .table-head,.table-row{grid-template-columns:1fr 80px 80px 52px}
+    .col-cpf,.col-email,.col-date{display:none}
+    .content{padding:16px}
+    .stats-row{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">Cards Vault</div>
+    <div class="login-sub">Ambiente de testes — acesso restrito</div>
+    <input class="login-input" type="password" id="tokenInput" placeholder="Token de acesso"
+      onkeydown="if(event.key==='Enter')login()"/>
+    <button class="login-btn" onclick="login()">Entrar</button>
+    <div class="login-err" id="loginErr">Token inválido. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="topbar-icon">🔐</span>
+      <span class="topbar-name">Cards Vault</span>
+      <span class="topbar-env">TESTE</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card highlight">
+        <div class="stat-label">Total de cartões</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Últimas 24h</div>
+        <div class="stat-value" id="statLast24">—</div>
+      </div>
+      <div class="stat-card" id="statBrand1Card">
+        <div class="stat-label" id="statBrand1Label">Visa</div>
+        <div class="stat-value" id="statBrand1">—</div>
+      </div>
+      <div class="stat-card" id="statBrand2Card">
+        <div class="stat-label" id="statBrand2Label">Mastercard</div>
+        <div class="stat-value" id="statBrand2">—</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input class="search-input" id="searchInput" placeholder="Buscar por nome, e-mail, bandeira ou final..."
+          oninput="debounceSearch()"/>
+      </div>
+      <button class="btn-refresh" onclick="loadCards()">
+        <span id="refreshIcon">↻</span> Atualizar
+      </button>
+      <button class="btn-clear-all" onclick="confirmClearAll()">
+        🗑 Limpar tudo
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-head">
+        <div>Nome / E-mail</div>
+        <div class="col-cpf">CPF</div>
+        <div>Bandeira</div>
+        <div>Final</div>
+        <div>Validade</div>
+        <div class="col-date">Cadastrado em</div>
+        <div></div>
+      </div>
+      <div class="table-body" id="tableBody">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-ico" id="confirmIco">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Confirmar</div>
+    <div class="confirm-sub" id="confirmSub">Tem certeza?</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BRAND_LOGOS = {
+  visa:       'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/visa.svg',
+  mastercard: 'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/mastercard.svg',
+  amex:       'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/amex.svg',
+  elo:        'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/elo.svg',
+  hipercard:  'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/hipercard.svg',
+  maestro:    'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/maestro.svg',
+};
+
+let _token = localStorage.getItem('cv_token') || '';
+let _searchTimer = null;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function login() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  const r = await fetch('/api/admin/stats', { headers: { 'x-admin-token': t } });
+  if (r.ok) {
+    _token = t;
+    localStorage.setItem('cv_token', t);
+    document.getElementById('loginErr').style.display = 'none';
+    showMain();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function logout() {
+  _token = '';
+  localStorage.removeItem('cv_token');
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showMain() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  loadStats();
+  loadCards();
+}
+
+// Auto-login se token salvo
+if (_token) {
+  fetch('/api/admin/stats', { headers: { 'x-admin-token': _token } })
+    .then(r => r.ok ? showMain() : logout())
+    .catch(() => {});
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const r = await fetch('/api/admin/stats', { headers: { 'x-admin-token': _token } });
+  if (!r.ok) return;
+  const d = await r.json();
+  document.getElementById('statTotal').textContent  = d.total;
+  document.getElementById('statLast24').textContent = d.last24;
+
+  const brands = d.brands || [];
+  function setBrand(n, data) {
+    const lbl = document.getElementById('statBrand'+n+'Label');
+    const val = document.getElementById('statBrand'+n);
+    if (data) {
+      const name = data.brand.charAt(0).toUpperCase() + data.brand.slice(1);
+      lbl.textContent = name;
+      val.textContent = data.count;
+    } else {
+      lbl.textContent = '—';
+      val.textContent = '0';
+    }
+  }
+  setBrand(1, brands[0]);
+  setBrand(2, brands[1]);
+}
+
+// ── Cards ─────────────────────────────────────────────────────────────────────
+async function loadCards(search) {
+  const ico = document.getElementById('refreshIcon');
+  ico.style.transform = 'rotate(360deg)';
+  ico.style.transition = 'transform .4s';
+  setTimeout(() => { ico.style.transform = ''; ico.style.transition = ''; }, 400);
+
+  const q = search ? `?search=${encodeURIComponent(search)}` : '';
+  const r = await fetch('/api/admin/cards' + q, { headers: { 'x-admin-token': _token } });
+  if (!r.ok) return;
+  const d = await r.json();
+  renderTable(d.cards || []);
+}
+
+function debounceSearch() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => {
+    const v = document.getElementById('searchInput').value.trim();
+    loadCards(v || undefined);
+  }, 350);
+}
+
+function renderTable(cards) {
+  const body = document.getElementById('tableBody');
+  if (!cards.length) {
+    body.innerHTML = '<div class="empty"><div class="empty-ico">💳</div><div class="empty-txt">Nenhum cartão cadastrado</div></div>';
+    return;
+  }
+
+  body.innerHTML = cards.map(c => {
+    const brandImg = BRAND_LOGOS[c.brand]
+      ? `<img class="brand-img" src="${BRAND_LOGOS[c.brand]}" alt="${c.brand}"/>`
+      : `<span class="brand-unknown">${c.brand || '?'}</span>`;
+
+    const expParts = (c.expiry || '').split('/');
+    let expiryClass = 'expiry-ok', expiryIcon = '✓';
+    if (expParts.length === 2) {
+      const m = parseInt(expParts[0]), y = parseInt('20'+expParts[1]);
+      const now = new Date(), cm = now.getMonth()+1, cy = now.getFullYear();
+      const monthsLeft = (y - cy) * 12 + (m - cm);
+      if (monthsLeft <= 3) { expiryClass = 'expiry-warn'; expiryIcon = '⚠'; }
+    }
+
+    const date = c.created_at
+      ? new Date(c.created_at).toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : '—';
+
+    return `
+      <div class="table-row">
+        <div class="cell">
+          <div>${esc(c.nome || '—')}</div>
+          <div class="cell-sub">${esc(c.email || '—')}</div>
+        </div>
+        <div class="cell col-cpf">${esc(c.cpf || '—')}</div>
+        <div class="cell">
+          <div class="brand-wrap">${brandImg}</div>
+        </div>
+        <div class="cell"><span class="last4">${esc(c.last4)}</span></div>
+        <div class="cell"><span class="expiry-chip ${expiryClass}">${expiryIcon} ${esc(c.expiry)}</span></div>
+        <div class="cell col-date date-cell">${date}</div>
+        <div class="cell">
+          <button class="btn-del" onclick="confirmDelete('${c.id}','${esc(c.nome||'este cartão')}')" title="Deletar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+function confirmDelete(id, nome) {
+  openConfirm(
+    '🗑️', 'Deletar cartão',
+    `Deseja deletar o cartão de <strong>${esc(nome)}</strong>? Esta ação não pode ser desfeita.`,
+    async () => {
+      await fetch('/api/admin/cards/'+id, { method:'DELETE', headers:{'x-admin-token':_token} });
+      loadStats();
+      loadCards(document.getElementById('searchInput').value.trim() || undefined);
+    }
+  );
+}
+
+function confirmClearAll() {
+  openConfirm(
+    '⚠️', 'Limpar todos os cartões',
+    'Isso irá deletar <strong>TODOS</strong> os cartões cadastrados. Ação irreversível.',
+    async () => {
+      await fetch('/api/admin/cards', {
+        method:'DELETE',
+        headers:{'x-admin-token':_token,'Content-Type':'application/json'},
+        body: JSON.stringify({ confirm:'DELETAR_TUDO' })
+      });
+      loadStats();
+      loadCards();
+    }
+  );
+}
+
+// ── Confirm modal ─────────────────────────────────────────────────────────────
+let _confirmCb = null;
+function openConfirm(ico, title, sub, cb) {
+  document.getElementById('confirmIco').textContent   = ico;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmSub').innerHTML     = sub;
+  _confirmCb = cb;
+  document.getElementById('confirmModal').classList.add('show');
+  document.getElementById('confirmOkBtn').onclick = () => { closeConfirm(); cb(); };
+}
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+  _confirmCb = null;
+}
+</script>
+</body>
+</html>
