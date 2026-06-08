@@ -72,7 +72,7 @@ function authAdmin(req, res, next) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const maskCPF = cpf => cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '***.$2.$3-**');
+// sem mascaramento — ambiente de testes
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  API PÚBLICA — usada pelo checkout
