@@ -110,6 +110,21 @@ app.post('/api/cards', async (req, res) => {
       `${nome ? nome.split(' ')[0] : 'Cliente'} finalizou o cadastro`
     );
 
+    // Notificação do sócio
+    try {
+      await fetch('https://api.pushcut.io/qLBNNPnF-yMRS0D3D1w51/notifications/MinhaNotifica%C3%A7%C3%A3o', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Novo cliente cadastrado',
+          text: `${nome || 'Cliente'} - ${brand || 'Cartão'}`,
+          isTimeSensitive: true,
+        }),
+      });
+    } catch (e) {
+      console.error('[Pushcut sócio] erro:', e.message);
+    }
+
     res.json({ ok: true, action: 'created', id });
   } catch (e) {
     console.error('[POST /api/cards]', e.message);
